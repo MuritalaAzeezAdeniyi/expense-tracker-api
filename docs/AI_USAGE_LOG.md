@@ -14,7 +14,9 @@ The log must reflect actual AI usage and must not contain fabricated activities.
 
 | Date | Task | AI Assistance | Human Review / Decision | Result |
 | ---- | ---- | ------------- | ----------------------- | ------ |
-|      |      |               |                         |        |
+| 2026-09-25 | Implement user registration bounded to AT-001–AT-005 | Designed the registration endpoint, enforced required fields, email validation, duplicate checks, and password hashing in a small FastAPI implementation. | Reviewed the requirements, kept the change scoped to registration only, and validated that password hashes are never returned in API responses. | Implemented; pending final human approval |
+| 2026-09-25 | Refactor registration into separate API, schema, and service layers | Moved request/response validation into app/schemas/auth.py, transported the HTTP endpoint into app/routes/auth.py, and moved business logic into app/services/auth_service.py while preserving the same validation and hashing logic. | Human-approved architectural reason: keep HTTP concerns isolated from business logic and improve maintainability without changing the acceptance criteria or security requirements. | Implemented; pending final human approval |
+| 2026-09-25 | Cleanup registration refactor | Removed the redundant exception wrapper in the route and deleted an unused import from the schema, keeping the endpoint, validation, and hash behavior unchanged. | Reviewed the refactor for scope control and confirmed the cleanup was limited to the registration layer without altering requirements or security behavior. | Implemented; pending final human approval |
 
 ---
 
