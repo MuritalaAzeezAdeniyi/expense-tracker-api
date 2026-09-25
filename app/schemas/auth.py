@@ -39,3 +39,15 @@ class UserResponse(BaseModel):
     email: EmailStr
     created_at: datetime
     updated_at: datetime
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+
+class LoginResponse(BaseModel):
+    id: str
+    full_name: str
+    email: EmailStr
+    token: str
