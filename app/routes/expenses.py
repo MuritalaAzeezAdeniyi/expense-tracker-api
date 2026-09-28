@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.schemas.expense import ExpenseCreate, ExpenseResponse
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
 from app.services.auth_service import get_authenticated_user
 
 router = APIRouter(prefix="", tags=["expenses"])
@@ -77,5 +77,29 @@ def get_expense(
     expense = request.app.state.expenses.get(expense_id)
     if expense is None or expense["user_id"] != user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
+
+    return expense
+
+
+@router.put("/expenses/{expense_id}", response_model=ExpenseResponse)
+def update_expense(
+    request: Request,
+    expense_id: str,
+    updates: ExpenseUpdate,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    user = get_authenticated_user(request.app.state.users, credentials.credentials)
+    expense = request.app.state.expenses.get(expense_id)
+    if expense is None or expense["user_id"] != user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
+
+    expense["amount"] = Decimal(str(updates.amount))
+    expense["description"] = updates.description
+    expense["category"] = updates.category
+    expense["expense_date"] = updates.expense_date
+    expense["updated_at"] = datetime.now(timezone.utc)
 
     return expense
