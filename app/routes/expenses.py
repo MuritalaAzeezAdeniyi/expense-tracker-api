@@ -103,3 +103,21 @@ def update_expense(
     expense["updated_at"] = datetime.now(timezone.utc)
 
     return expense
+
+
+@router.delete("/expenses/{expense_id}")
+def delete_expense(
+    request: Request,
+    expense_id: str,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    user = get_authenticated_user(request.app.state.users, credentials.credentials)
+    expense = request.app.state.expenses.get(expense_id)
+    if expense is None or expense["user_id"] != user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
+
+    del request.app.state.expenses[expense_id]
+    return {"detail": "Expense deleted successfully."}
