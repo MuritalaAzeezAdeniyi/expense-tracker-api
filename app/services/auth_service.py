@@ -1,10 +1,11 @@
 import base64
 import hashlib
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
+import jwt
 from fastapi import HTTPException, status
 
 from app.schemas.auth import LoginRequest, UserCreate
@@ -43,7 +44,7 @@ def register_user(users_store: dict[str, dict[str, Any]], user_data: UserCreate)
                 detail="A user with this email address already exists.",
             )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc) 
     user_id = str(uuid4())
     user_record = {
         "id": user_id,
@@ -65,6 +66,16 @@ def register_user(users_store: dict[str, dict[str, Any]], user_data: UserCreate)
     }
 
 
+def _get_jwt_secret() -> str:
+    secret = os.getenv("JWT_SECRET_KEY")
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JWT secret is not configured.",
+        )
+    return secret
+
+
 def login_user(users_store: dict[str, dict[str, Any]], credentials: LoginRequest) -> dict[str, Any]:
     normalized_email = credentials.email.lower().strip()
     user_record = next(
@@ -78,10 +89,49 @@ def login_user(users_store: dict[str, dict[str, Any]], credentials: LoginRequest
             detail="Invalid email or password.",
         )
 
-    token = str(uuid4())
+    token = jwt.encode(
+        {
+            "sub": user_record["id"],
+            "email": user_record["email"],
+            "full_name": user_record["full_name"],
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        },
+        _get_jwt_secret(),
+        algorithm="HS256",
+    )
     return {
         "id": user_record["id"],
         "full_name": user_record["full_name"],
         "email": user_record["email"],
         "token": token,
+    }
+
+
+def get_authenticated_user(users_store: dict[str, dict[str, Any]], token: str) -> dict[str, Any]:
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    try:
+        payload = jwt.decode(
+            token,
+            _get_jwt_secret(),
+            algorithms=["HS256"],
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired.") from None
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token.") from None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token.")
+
+    user_record = next((user for user in users_store.values() if user["id"] == user_id), None)
+    if user_record is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token.")
+
+    return {
+        "id": user_record["id"],
+        "full_name": user_record["full_name"],
+        "email": user_record["email"],
     }
