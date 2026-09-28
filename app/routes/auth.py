@@ -4,8 +4,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.schemas.auth import LoginRequest, LoginResponse, UserCreate, UserResponse
 from app.services.auth_service import get_authenticated_user, login_user, register_user
 
-router = APIRouter(prefix="", tags=["auth"])
 security = HTTPBearer(auto_error=False)
+
+router = APIRouter(prefix="", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
