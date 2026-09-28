@@ -46,3 +46,36 @@ def create_expense(
         "created_at": expense_record["created_at"],
         "updated_at": expense_record["updated_at"],
     }
+
+
+@router.get("/expenses", response_model=list[ExpenseResponse])
+def list_expenses(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    user = get_authenticated_user(request.app.state.users, credentials.credentials)
+    return [
+        expense
+        for expense in request.app.state.expenses.values()
+        if expense["user_id"] == user["id"]
+    ]
+
+
+@router.get("/expenses/{expense_id}", response_model=ExpenseResponse)
+def get_expense(
+    request: Request,
+    expense_id: str,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    user = get_authenticated_user(request.app.state.users, credentials.credentials)
+    expense = request.app.state.expenses.get(expense_id)
+    if expense is None or expense["user_id"] != user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
+
+    return expense
