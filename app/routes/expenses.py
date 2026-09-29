@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
+from app.schemas.expense import ALLOWED_CATEGORIES, ExpenseCreate, ExpenseResponse, ExpenseUpdate
 from app.services.auth_service import get_authenticated_user
 
 router = APIRouter(prefix="", tags=["expenses"])
@@ -51,17 +51,24 @@ def create_expense(
 @router.get("/expenses", response_model=list[ExpenseResponse])
 def list_expenses(
     request: Request,
+    category: str | None = None,
     credentials: HTTPAuthorizationCredentials = Security(security),
 ):
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
 
+    if category is not None and category not in ALLOWED_CATEGORIES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Category must be one of: Food, Transportation, Housing, Utilities, Health, Education, Entertainment, Shopping, Other.")
+
     user = get_authenticated_user(request.app.state.users, credentials.credentials)
-    return [
+    expenses = [
         expense
         for expense in request.app.state.expenses.values()
         if expense["user_id"] == user["id"]
     ]
+    if category is not None:
+        return [expense for expense in expenses if expense["category"] == category]
+    return expenses
 
 
 @router.get("/expenses/{expense_id}", response_model=ExpenseResponse)

@@ -139,6 +139,111 @@ def test_get_expense_by_id_returns_404_for_another_users_expense():
     assert response.json()["detail"] == "Expense not found."
 
 
+def test_get_expenses_filters_by_valid_category():
+    token = _register_and_login("filter@example.com", "Filter User")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "12.50",
+            "description": "Coffee",
+            "category": "Food",
+            "expense_date": "2026-09-28",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "22.00",
+            "description": "Train ticket",
+            "category": "Transportation",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Food",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["category"] == "Food"
+    assert response.json()[0]["description"] == "Coffee"
+
+
+def test_get_expenses_excludes_other_categories_when_filtered():
+    token = _register_and_login("category-filter@example.com", "Category Filter")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "9.00",
+            "description": "Lunch",
+            "category": "Food",
+            "expense_date": "2026-09-28",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "30.00",
+            "description": "Rent",
+            "category": "Housing",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Housing",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["category"] == "Housing"
+    assert response.json()[0]["description"] == "Rent"
+
+
+def test_get_expenses_rejects_cross_user_access_when_filtered():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "10.00",
+            "description": "Taxi",
+            "category": "Transportation",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Transportation",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_expenses_rejects_invalid_category_filter():
+    token = _register_and_login("invalid-filter@example.com", "Invalid Filter")
+
+    response = client.get(
+        "/expenses?category=Travel",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
 def test_get_expenses_rejects_cross_user_access():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
