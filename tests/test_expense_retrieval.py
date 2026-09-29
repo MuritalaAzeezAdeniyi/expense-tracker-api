@@ -508,6 +508,78 @@ def test_get_expenses_filters_by_category_and_date_together():
     assert [item["description"] for item in response.json()] == ["Food within range"]
 
 
+def test_get_expenses_category_filter_does_not_expose_another_users_expenses():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "10.00",
+            "description": "User A food",
+            "category": "Food",
+            "expense_date": "2026-09-15",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Food",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_expenses_date_range_filter_does_not_expose_another_users_expenses():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "15.00",
+            "description": "User A date in range",
+            "category": "Food",
+            "expense_date": "2026-09-18",
+        },
+    )
+
+    response = client.get(
+        "/expenses?start_date=2026-09-10&end_date=2026-09-20",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_expenses_category_and_date_filter_do_not_expose_another_users_expenses():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "25.00",
+            "description": "User A combo",
+            "category": "Food",
+            "expense_date": "2026-09-16",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Food&start_date=2026-09-10&end_date=2026-09-20",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_get_expenses_rejects_cross_user_access():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
