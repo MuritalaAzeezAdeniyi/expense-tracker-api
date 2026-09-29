@@ -723,6 +723,20 @@ def test_get_expenses_summary_excludes_another_users_expenses():
     assert response.json()["category_totals"] == {"Food": "15.00"}
 
 
+def test_get_expenses_summary_returns_empty_summary_for_authenticated_user_with_no_expenses():
+    token = _register_and_login("empty-summary@example.com", "Empty Summary User")
+
+    response = client.get(
+        "/expenses/summary",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total_amount"] == "0"
+    assert response.json()["total_count"] == 0
+    assert response.json()["category_totals"] == {}
+
+
 def test_get_expenses_summary_rejects_unauthenticated_request():
     response = client.get("/expenses/summary")
 
