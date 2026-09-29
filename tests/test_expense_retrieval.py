@@ -114,6 +114,28 @@ def test_get_expense_by_id_returns_404_when_expense_does_not_exist():
     assert response.json()["detail"] == "Expense not found."
 
 
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("get", "/expenses/does-not-exist", None),
+        ("put", "/expenses/does-not-exist", {"amount": "20.00", "description": "Updated groceries", "category": "Food", "expense_date": "2026-09-29"}),
+        ("delete", "/expenses/does-not-exist", None),
+    ],
+)
+def test_expense_resource_not_found_returns_404_without_exposing_data(method, path, payload):
+    token = _register_and_login("missing-resource@example.com", "Missing Resource")
+
+    request_kwargs = {"headers": {"Authorization": f"Bearer {token}"}}
+    if payload is not None:
+        request_kwargs["json"] = payload
+
+    response = getattr(client, method)(path, **request_kwargs)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Expense not found."
+    assert app.state.expenses == {}
+
+
 def test_get_expense_by_id_returns_404_for_another_users_expense():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
