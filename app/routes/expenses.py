@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 
@@ -52,6 +52,8 @@ def create_expense(
 def list_expenses(
     request: Request,
     category: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     credentials: HTTPAuthorizationCredentials = Security(security),
 ):
     if credentials is None:
@@ -66,8 +68,14 @@ def list_expenses(
         for expense in request.app.state.expenses.values()
         if expense["user_id"] == user["id"]
     ]
+
     if category is not None:
-        return [expense for expense in expenses if expense["category"] == category]
+        expenses = [expense for expense in expenses if expense["category"] == category]
+    if start_date is not None:
+        expenses = [expense for expense in expenses if expense["expense_date"] >= start_date]
+    if end_date is not None:
+        expenses = [expense for expense in expenses if expense["expense_date"] <= end_date]
+
     return expenses
 
 

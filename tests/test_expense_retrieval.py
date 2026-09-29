@@ -244,6 +244,270 @@ def test_get_expenses_rejects_invalid_category_filter():
     assert response.status_code == 422
 
 
+def test_get_expenses_filters_by_start_date():
+    token = _register_and_login("start-date@example.com", "Start Date")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Day 1",
+            "category": "Food",
+            "expense_date": "2026-09-01",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.00",
+            "description": "Day 10",
+            "category": "Food",
+            "expense_date": "2026-09-10",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "20.00",
+            "description": "Day 20",
+            "category": "Food",
+            "expense_date": "2026-09-20",
+        },
+    )
+
+    response = client.get(
+        "/expenses?start_date=2026-09-10",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert [item["description"] for item in response.json()] == ["Day 10", "Day 20"]
+
+
+def test_get_expenses_filters_by_end_date():
+    token = _register_and_login("end-date@example.com", "End Date")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Before",
+            "category": "Food",
+            "expense_date": "2026-09-05",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.00",
+            "description": "Included",
+            "category": "Food",
+            "expense_date": "2026-09-10",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "20.00",
+            "description": "After",
+            "category": "Food",
+            "expense_date": "2026-09-20",
+        },
+    )
+
+    response = client.get(
+        "/expenses?end_date=2026-09-10",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert [item["description"] for item in response.json()] == ["Before", "Included"]
+
+
+def test_get_expenses_filters_by_date_range():
+    token = _register_and_login("range@example.com", "Range User")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Outside early",
+            "category": "Food",
+            "expense_date": "2026-09-01",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.00",
+            "description": "Included start",
+            "category": "Food",
+            "expense_date": "2026-09-10",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "20.00",
+            "description": "Included middle",
+            "category": "Food",
+            "expense_date": "2026-09-15",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "25.00",
+            "description": "Included end",
+            "category": "Food",
+            "expense_date": "2026-09-30",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "30.00",
+            "description": "Outside late",
+            "category": "Food",
+            "expense_date": "2026-10-05",
+        },
+    )
+
+    response = client.get(
+        "/expenses?start_date=2026-09-10&end_date=2026-09-30",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert [item["description"] for item in response.json()] == [
+        "Included start",
+        "Included middle",
+        "Included end",
+    ]
+
+
+def test_get_expenses_includes_boundary_dates():
+    token = _register_and_login("boundary@example.com", "Boundary Day")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Boundary start",
+            "category": "Food",
+            "expense_date": "2026-09-10",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.00",
+            "description": "Boundary end",
+            "category": "Food",
+            "expense_date": "2026-09-30",
+        },
+    )
+
+    response = client.get(
+        "/expenses?start_date=2026-09-10&end_date=2026-09-30",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert [item["description"] for item in response.json()] == ["Boundary start", "Boundary end"]
+
+
+def test_get_expenses_date_filter_does_not_expose_another_users_expenses():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "10.00",
+            "description": "User A item",
+            "category": "Food",
+            "expense_date": "2026-09-15",
+        },
+    )
+
+    response = client.get(
+        "/expenses?start_date=2026-09-10&end_date=2026-09-20",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_expenses_rejects_invalid_date_filter():
+    token = _register_and_login("invalid-date@example.com", "Invalid Date")
+
+    response = client.get(
+        "/expenses?start_date=not-a-date",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_expenses_filters_by_category_and_date_together():
+    token = _register_and_login("combo@example.com", "Combo User")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Food match",
+            "category": "Food",
+            "expense_date": "2026-09-05",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.00",
+            "description": "Food within range",
+            "category": "Food",
+            "expense_date": "2026-09-15",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "20.00",
+            "description": "Housing within range",
+            "category": "Housing",
+            "expense_date": "2026-09-15",
+        },
+    )
+
+    response = client.get(
+        "/expenses?category=Food&start_date=2026-09-10&end_date=2026-09-20",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert [item["description"] for item in response.json()] == ["Food within range"]
+
+
 def test_get_expenses_rejects_cross_user_access():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
