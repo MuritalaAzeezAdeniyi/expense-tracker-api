@@ -76,6 +76,63 @@ def test_update_own_expense_successfully():
     assert body["updated_at"]
 
 
+def test_update_expense_accepts_valid_category():
+    token = _register_and_login("valid-category@example.com", "Valid Category")
+    create_response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Original",
+            "category": "Food",
+            "expense_date": "2026-09-28",
+        },
+    )
+    expense_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/expenses/{expense_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "35.50",
+            "description": "Updated commute",
+            "category": "Transportation",
+            "expense_date": "2026-09-29",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["category"] == "Transportation"
+
+
+def test_update_expense_rejects_invalid_category():
+    token = _register_and_login("invalid-category@example.com", "Invalid Category")
+    create_response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Valid",
+            "category": "Food",
+            "expense_date": "2026-09-28",
+        },
+    )
+    expense_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/expenses/{expense_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "20.00",
+            "description": "Updated",
+            "category": "Travel",
+            "expense_date": "2026-09-29",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_update_expense_rejects_invalid_values():
     token = _register_and_login("invalid@example.com", "Invalid")
     create_response = client.post(

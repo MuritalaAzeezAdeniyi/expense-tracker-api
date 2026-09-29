@@ -61,6 +61,41 @@ def test_create_expense_successfully():
     assert body["id"]
 
 
+def test_create_expense_accepts_valid_category():
+    token = _register_and_login()
+
+    response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.50",
+            "description": "Train ticket",
+            "category": "Transportation",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["category"] == "Transportation"
+
+
+def test_create_expense_rejects_invalid_category():
+    token = _register_and_login()
+
+    response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Groceries",
+            "category": "Travel",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_create_expense_rejects_non_positive_amount():
     token = _register_and_login()
 
