@@ -737,6 +737,29 @@ def test_get_expenses_summary_returns_empty_summary_for_authenticated_user_with_
     assert response.json()["category_totals"] == {}
 
 
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("post", "/expenses", {"amount": "10.00", "description": "Groceries", "category": "Food", "expense_date": "2026-09-28"}),
+        ("get", "/expenses", None),
+        ("get", "/expenses/does-not-exist", None),
+        ("put", "/expenses/does-not-exist", {"amount": "20.00", "description": "Updated groceries", "category": "Food", "expense_date": "2026-09-29"}),
+        ("delete", "/expenses/does-not-exist", None),
+        ("get", "/expenses/summary", None),
+    ],
+)
+def test_all_protected_expense_endpoints_reject_missing_authentication(method, path, payload):
+    request_kwargs = {}
+    if payload is not None:
+        request_kwargs["json"] = payload
+
+    response = getattr(client, method)(path, **request_kwargs)
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated."
+    assert app.state.expenses == {}
+
+
 def test_get_expenses_summary_rejects_unauthenticated_request():
     response = client.get("/expenses/summary")
 
