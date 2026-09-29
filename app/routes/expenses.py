@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
@@ -77,6 +78,33 @@ def list_expenses(
         expenses = [expense for expense in expenses if expense["expense_date"] <= end_date]
 
     return expenses
+
+
+@router.get("/expenses/summary")
+def get_expense_summary(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+
+    user = get_authenticated_user(request.app.state.users, credentials.credentials)
+    user_expenses = [
+        expense
+        for expense in request.app.state.expenses.values()
+        if expense["user_id"] == user["id"]
+    ]
+
+    total_amount = sum((expense["amount"] for expense in user_expenses), Decimal("0"))
+    category_totals = defaultdict(Decimal)
+    for expense in user_expenses:
+        category_totals[expense["category"]] += expense["amount"]
+
+    return {
+        "total_amount": str(total_amount),
+        "total_count": len(user_expenses),
+        "category_totals": {category: str(amount) for category, amount in category_totals.items()},
+    }
 
 
 @router.get("/expenses/{expense_id}", response_model=ExpenseResponse)

@@ -610,6 +610,126 @@ def test_get_expenses_combined_filters_only_return_authenticated_users_expenses(
     assert [item["description"] for item in response.json()] == ["User B combo"]
 
 
+def test_get_expenses_summary_returns_total_amount_and_count_for_authenticated_user():
+    token = _register_and_login("summary@example.com", "Summary User")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Lunch",
+            "category": "Food",
+            "expense_date": "2026-09-01",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "15.50",
+            "description": "Train",
+            "category": "Transportation",
+            "expense_date": "2026-09-02",
+        },
+    )
+
+    response = client.get(
+        "/expenses/summary",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total_amount"] == "25.50"
+    assert response.json()["total_count"] == 2
+
+
+def test_get_expenses_summary_groups_totals_by_category_for_authenticated_user():
+    token = _register_and_login("category-summary@example.com", "Category Summary")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "10.00",
+            "description": "Lunch",
+            "category": "Food",
+            "expense_date": "2026-09-01",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "12.00",
+            "description": "Dinner",
+            "category": "Food",
+            "expense_date": "2026-09-02",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": "40.00",
+            "description": "Rent",
+            "category": "Housing",
+            "expense_date": "2026-09-03",
+        },
+    )
+
+    response = client.get(
+        "/expenses/summary",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["category_totals"] == {"Food": "22.00", "Housing": "40.00"}
+
+
+def test_get_expenses_summary_excludes_another_users_expenses():
+    user_a_token = _register_and_login("usera@example.com", "User A")
+    user_b_token = _register_and_login("userb@example.com", "User B")
+
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_a_token}"},
+        json={
+            "amount": "50.00",
+            "description": "User A expense",
+            "category": "Food",
+            "expense_date": "2026-09-10",
+        },
+    )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+        json={
+            "amount": "15.00",
+            "description": "User B expense",
+            "category": "Food",
+            "expense_date": "2026-09-11",
+        },
+    )
+
+    response = client.get(
+        "/expenses/summary",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total_amount"] == "15.00"
+    assert response.json()["total_count"] == 1
+    assert response.json()["category_totals"] == {"Food": "15.00"}
+
+
+def test_get_expenses_summary_rejects_unauthenticated_request():
+    response = client.get("/expenses/summary")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated."
+
+
 def test_get_expenses_rejects_cross_user_access():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
