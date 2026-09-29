@@ -508,7 +508,7 @@ def test_get_expenses_filters_by_category_and_date_together():
     assert [item["description"] for item in response.json()] == ["Food within range"]
 
 
-def test_get_expenses_category_filter_does_not_expose_another_users_expenses():
+def test_get_expenses_category_filter_only_returns_authenticated_users_expenses():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
 
@@ -522,6 +522,16 @@ def test_get_expenses_category_filter_does_not_expose_another_users_expenses():
             "expense_date": "2026-09-15",
         },
     )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+        json={
+            "amount": "12.50",
+            "description": "User B food",
+            "category": "Food",
+            "expense_date": "2026-09-18",
+        },
+    )
 
     response = client.get(
         "/expenses?category=Food",
@@ -529,10 +539,10 @@ def test_get_expenses_category_filter_does_not_expose_another_users_expenses():
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert [item["description"] for item in response.json()] == ["User B food"]
 
 
-def test_get_expenses_date_range_filter_does_not_expose_another_users_expenses():
+def test_get_expenses_date_range_filter_only_returns_authenticated_users_expenses():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
 
@@ -546,6 +556,16 @@ def test_get_expenses_date_range_filter_does_not_expose_another_users_expenses()
             "expense_date": "2026-09-18",
         },
     )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+        json={
+            "amount": "20.00",
+            "description": "User B date in range",
+            "category": "Food",
+            "expense_date": "2026-09-19",
+        },
+    )
 
     response = client.get(
         "/expenses?start_date=2026-09-10&end_date=2026-09-20",
@@ -553,10 +573,10 @@ def test_get_expenses_date_range_filter_does_not_expose_another_users_expenses()
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert [item["description"] for item in response.json()] == ["User B date in range"]
 
 
-def test_get_expenses_category_and_date_filter_do_not_expose_another_users_expenses():
+def test_get_expenses_combined_filters_only_return_authenticated_users_expenses():
     user_a_token = _register_and_login("usera@example.com", "User A")
     user_b_token = _register_and_login("userb@example.com", "User B")
 
@@ -570,6 +590,16 @@ def test_get_expenses_category_and_date_filter_do_not_expose_another_users_expen
             "expense_date": "2026-09-16",
         },
     )
+    client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {user_b_token}"},
+        json={
+            "amount": "30.00",
+            "description": "User B combo",
+            "category": "Food",
+            "expense_date": "2026-09-17",
+        },
+    )
 
     response = client.get(
         "/expenses?category=Food&start_date=2026-09-10&end_date=2026-09-20",
@@ -577,7 +607,7 @@ def test_get_expenses_category_and_date_filter_do_not_expose_another_users_expen
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert [item["description"] for item in response.json()] == ["User B combo"]
 
 
 def test_get_expenses_rejects_cross_user_access():
