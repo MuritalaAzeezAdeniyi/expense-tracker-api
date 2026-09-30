@@ -497,45 +497,45 @@ A feature shall not be considered complete until:
 
 Acceptance criteria will be tracked during implementation.
 
-| ID     | Acceptance Criteria                  | Status  |
-| ------ | ------------------------------------ | ------- |
-| AT-001 | Successful registration              | Pending |
-| AT-002 | Required registration fields         | Pending |
-| AT-003 | Invalid email                        | Pending |
-| AT-004 | Duplicate email                      | Pending |
-| AT-005 | Password protection                  | Pending |
-| AT-006 | Successful login                     | Pending |
-| AT-007 | Invalid login                        | Pending |
-| AT-008 | Unauthenticated access               | Pending |
-| AT-009 | Invalid authentication token         | Pending |
-| AT-010 | Create expense                       | Pending |
-| AT-011 | Invalid expense amount               | Pending |
-| AT-012 | Required description                 | Pending |
-| AT-013 | Required category                    | Pending |
-| AT-014 | Valid expense date                   | Pending |
-| AT-015 | View own expenses                    | Pending |
-| AT-016 | View specific expense                | Pending |
-| AT-017 | Non-existent expense                 | Pending |
-| AT-018 | Cannot view another user's expense   | Pending |
-| AT-019 | Cannot update another user's expense | Pending |
-| AT-020 | Cannot delete another user's expense | Pending |
-| AT-021 | Update own expense                   | Pending |
-| AT-022 | Invalid expense update               | Pending |
-| AT-023 | Delete own expense                   | Pending |
-| AT-024 | Deleted expense cannot be retrieved  | Pending |
-| AT-025 | Valid expense category               | Pending |
-| AT-026 | Invalid expense category             | Pending |
-| AT-027 | Category filtering                   | Pending |
-| AT-028 | Date-range filtering                 | Pending |
-| AT-029 | Filtering respects ownership         | Pending |
-| AT-030 | Expense summary                      | Pending |
-| AT-031 | Summary respects ownership           | Pending |
-| AT-032 | Empty expense summary                | Pending |
-| AT-033 | Invalid request data                 | Pending |
-| AT-034 | Missing authentication               | Pending |
-| AT-035 | Resource not found                   | Pending |
-| AT-036 | Duplicate email                      | Pending |   
-| AT-037 | Unexpected server error              | Pending |
-| AT-038 | Password protection                  | Pending |
-| AT-039 | Secrets not hardcoded                | Pending |
-| AT-040 | User data isolation                  | Pending |
+| ID     | Acceptance Criteria                  | Status      |
+| ------ | ------------------------------------ | ----------- |
+| AT-001 | Successful registration              | Implemented |
+| AT-002 | Required registration fields         | Implemented |
+| AT-003 | Invalid email                        | Implemented |
+| AT-004 | Duplicate email                      | Implemented |
+| AT-005 | Password protection                  | Implemented |
+| AT-006 | Successful login                     | Implemented |
+| AT-007 | Invalid login                        | Implemented |
+| AT-008 | Unauthenticated access               | Implemented |
+| AT-009 | Invalid authentication token         | Implemented |
+| AT-010 | Create expense                       | Implemented |
+| AT-011 | Invalid expense amount               | Implemented |
+| AT-012 | Required description                 | Implemented |
+| AT-013 | Required category                    | Implemented |
+| AT-014 | Valid expense date                   | Implemented |
+| AT-015 | View own expenses                    | Implemented |
+| AT-016 | View specific expense                | Implemented |
+| AT-017 | Non-existent expense                 | Implemented |
+| AT-018 | Cannot view another user's expense   | Implemented |
+| AT-019 | Cannot update another user's expense | Implemented |
+| AT-020 | Cannot delete another user's expense | Implemented |
+| AT-021 | Update own expense                   | Implemented |
+| AT-022 | Invalid expense update               | Implemented |
+| AT-023 | Delete own expense                   | Implemented |
+| AT-024 | Deleted expense cannot be retrieved  | Implemented |
+| AT-025 | Valid expense category               | Implemented |
+| AT-026 | Invalid expense category             | Implemented |
+| AT-027 | Category filtering                   | Implemented |
+| AT-028 | Date-range filtering                 | Implemented |
+| AT-029 | Filtering respects ownership         | Implemented |
+| AT-030 | Expense summary                      | Implemented |
+| AT-031 | Summary respects ownership           | Implemented |
+| AT-032 | Empty expense summary                | Implemented |
+| AT-033 | Invalid request data                 | Implemented |
+| AT-034 | Missing authentication               | Implemented |
+| AT-035 | Resource not found                   | Implemented |
+| AT-036 | Duplicate email                      | Implemented |
+| AT-037 | Unexpected server error              | Implemented |
+| AT-038 | Password protection                  | Implemented |
+| AT-039 | Secrets not hardcoded                | Implemented |
+| AT-040 | User data isolation                  | Implemented |
