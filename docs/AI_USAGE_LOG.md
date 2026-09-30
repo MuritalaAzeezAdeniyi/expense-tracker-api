@@ -33,6 +33,7 @@ The log must reflect actual AI usage and must not contain fabricated activities.
 | 2026-09-29 | Verify invalid request handling bounded to AT-033 | Added focused tests confirming invalid expense requests are rejected through the existing validation behavior without creating invalid expense records. | Reviewed the scope to keep it limited to AT-033 without introducing new requirements or unrelated validation changes. | Implemented; pending human review |
 | 2026-09-29 | Verify missing authentication handling bounded to AT-034 | Added focused tests confirming protected expense and summary endpoints reject requests without authentication. | Reviewed the scope to keep it limited to AT-034 without changing authentication behavior or unrelated functionality. | Implemented; pending human review |
 | 2026-09-29 | Verify not-found handling bounded to AT-035 | Added focused tests confirming nonexistent expense resources return 404 for retrieval, update, and deletion without exposing resource information or changing application state. | Reviewed the scope to keep it limited to AT-035 without changing existing resource behavior. | Implemented; pending human review |
+| 2026-09-29 | Verify duplicate email handling bounded to AT-036 | Added a focused test confirming that registration rejects an email already associated with an existing user without modifying the original account. | Reviewed the scope to keep it limited to duplicate email handling without changing existing registration behavior. | Implemented; pending human review |
 ---
 
 ## AI Review Process

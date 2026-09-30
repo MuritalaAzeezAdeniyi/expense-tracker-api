@@ -1,9 +1,19 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_state():
+    app.state.users.clear()
+    app.state.expenses.clear()
+    yield
+    app.state.users.clear()
+    app.state.expenses.clear()
 
 
 def test_register_success():
@@ -47,18 +57,31 @@ def test_register_invalid_email():
 
 
 def test_register_duplicate_email():
-    payload = {
+    original_payload = {
         "full_name": "Duplicate User",
         "email": "duplicate@example.com",
         "password": "StrongPass1!",
     }
 
-    first_response = client.post("/register", json=payload)
+    first_response = client.post("/register", json=original_payload)
     assert first_response.status_code == 201
 
-    second_response = client.post("/register", json=payload)
+    duplicate_payload = {
+        "full_name": "Another User",
+        "email": "DUPLICATE@example.com",
+        "password": "AnotherStrongPass1!",
+    }
+
+    second_response = client.post("/register", json=duplicate_payload)
 
     assert second_response.status_code == 409
+    assert second_response.json()["detail"] == "A user with this email address already exists."
+
+    stored_users = list(app.state.users.values())
+    assert len(stored_users) == 1
+    assert stored_users[0]["full_name"] == original_payload["full_name"]
+    assert stored_users[0]["email"] == original_payload["email"].lower()
+    assert stored_users[0]["password_hash"]
 
 
 def test_password_is_hashed_before_storage():
