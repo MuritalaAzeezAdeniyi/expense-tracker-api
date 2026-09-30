@@ -111,6 +111,70 @@ def test_create_expense_rejects_non_positive_amount():
     )
 
     assert response.status_code == 422
+    assert len(app.state.expenses) == 0
+
+
+def test_create_expense_rejects_negative_amount():
+    token = _register_and_login()
+
+    response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "amount": -1,
+            "description": "Groceries",
+            "category": "Food",
+            "expense_date": "2026-09-28",
+        },
+    )
+
+    assert response.status_code == 422
+    assert len(app.state.expenses) == 0
+
+
+def test_create_expense_rejects_invalid_body_format():
+    token = _register_and_login()
+
+    response = client.post(
+        "/expenses",
+        headers={"Authorization": f"Bearer {token}"},
+        json=["not", "an", "expense"],
+    )
+
+    assert response.status_code == 422
+    assert len(app.state.expenses) == 0
+
+
+def test_create_expense_unexpected_error_returns_generic_500(monkeypatch):
+    token = _register_and_login()
+
+    def raise_unexpected_error(*args, **kwargs):
+        raise RuntimeError("unexpected failure")
+
+    monkeypatch.setattr("app.routes.expenses.get_authenticated_user", raise_unexpected_error)
+
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        response = test_client.post(
+            "/expenses",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "amount": "10.00",
+                "description": "Groceries",
+                "category": "Food",
+                "expense_date": "2026-09-28",
+            },
+        )
+
+    assert response.status_code == 500
+    payload = response.text
+    assert payload == "Internal Server Error"
+    serialized = payload.lower()
+    assert "traceback" not in serialized
+    assert "password" not in serialized
+    assert "jwt" not in serialized
+    assert "secret" not in serialized
+    assert "file" not in serialized
+    assert len(app.state.expenses) == 0
 
 
 def test_create_expense_requires_description():

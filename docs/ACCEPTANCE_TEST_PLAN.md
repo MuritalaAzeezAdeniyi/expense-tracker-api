@@ -534,7 +534,7 @@ Acceptance criteria will be tracked during implementation.
 | AT-033 | Invalid request data                 | Pending |
 | AT-034 | Missing authentication               | Pending |
 | AT-035 | Resource not found                   | Pending |
-| AT-036 | Duplicate email                      | Pending |
+| AT-036 | Duplicate email                      | Pending |   
 | AT-037 | Unexpected server error              | Pending |
 | AT-038 | Password protection                  | Pending |
 | AT-039 | Secrets not hardcoded                | Pending |

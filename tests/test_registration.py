@@ -1,6 +1,10 @@
+import re
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
+from app import main as main_module
 from app.main import app
 
 
@@ -82,6 +86,25 @@ def test_register_duplicate_email():
     assert stored_users[0]["full_name"] == original_payload["full_name"]
     assert stored_users[0]["email"] == original_payload["email"].lower()
     assert stored_users[0]["password_hash"]
+
+
+def test_production_code_does_not_hardcode_secrets():
+    app_root = Path(main_module.__file__).resolve().parent
+    source_files = app_root.rglob("*.py")
+    violations = []
+
+    for file_path in source_files:
+        text = file_path.read_text(encoding="utf-8")
+        if re.search(
+            r"(?i)(?:jwt[_-]?secret|secret[_-]?key|api[_-]?key|database[_-]?password|db[_-]?password)\s*[:=]\s*['\"]",
+            text,
+        ):
+            violations.append(str(file_path.relative_to(app_root)))
+
+    assert not violations, f"Hardcoded secrets detected in app code: {violations}"
+
+    auth_service_source = (app_root / "services" / "auth_service.py").read_text(encoding="utf-8")
+    assert 'os.getenv("JWT_SECRET_KEY")' in auth_service_source
 
 
 def test_password_is_hashed_before_storage():
