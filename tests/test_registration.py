@@ -101,3 +101,39 @@ def test_password_is_hashed_before_storage():
     assert stored_user["password_hash"] != payload["password"]
     assert "password" not in stored_user
     assert stored_user["password_hash"]
+
+
+def test_password_is_never_exposed_in_registration_response_or_storage():
+    payload = {
+        "full_name": "Password Protection",
+        "email": "passwordprotection@example.com",
+        "password": "StrongPass1!",
+    }
+
+    response = client.post("/register", json=payload)
+    assert response.status_code == 201
+
+    body = response.json()
+    assert body["full_name"] == payload["full_name"]
+    assert body["email"] == payload["email"]
+    assert "password" not in body
+    assert "password_hash" not in body
+
+    stored_user = next(
+        user for user in app.state.users.values() if user["email"] == payload["email"]
+    )
+    assert stored_user["password_hash"] != payload["password"]
+    assert "password" not in stored_user
+    assert stored_user["password_hash"]
+
+    login_response = client.post(
+        "/login",
+        json={
+            "email": payload["email"],
+            "password": payload["password"],
+        },
+    )
+    assert login_response.status_code == 200
+    assert login_response.json()["email"] == payload["email"]
+    assert "password" not in login_response.json()
+    assert "password_hash" not in login_response.json()
