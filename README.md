@@ -188,3 +188,6 @@ This repository does not yet implement database persistence or long-term storage
 - Validate requirements against the specification and acceptance tests before editing code.
 - Review security implications for authentication, user ownership, and password handling.
 - Do not claim functionality that is not present in the current codebase.
+## Demo
+
+[Watch the Demo Recording](https://www.loom.com/share/7b4fffc8139d4b3096e4cb3b730a948f)
